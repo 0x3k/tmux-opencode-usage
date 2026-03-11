@@ -1,21 +1,23 @@
 #!/usr/bin/env bash
 # tmux-opencode-usage - tmux status bar plugin for opencode AI usage
-# Shows prompts sent and tokens consumed in the last 24 hours.
+# Shows prompts sent and tokens consumed for the configured time window.
 
 PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 POLL_SCRIPT="$PLUGIN_DIR/scripts/poll.sh"
 DISPLAY_SCRIPT="$PLUGIN_DIR/scripts/display.sh"
 
-# User-configurable options with defaults
-LOCK_FILE="${TMPDIR:-/tmp}/opencode_usage_poll.lock"
 CACHE_FILE="${TMPDIR:-/tmp}/opencode_usage_cache"
+LOCK_FILE="${TMPDIR:-/tmp}/opencode_usage_poll.lock"
 
-tmux set-option -gq @opencode_usage_lock_file  "$LOCK_FILE"
+# Read user option: "today" (default) or "24h"
+WINDOW=$(tmux show-option -gv @opencode_usage_window 2>/dev/null)
+WINDOW="${WINDOW:-today}"
+
 tmux set-option -gq @opencode_usage_cache_file "$CACHE_FILE"
+tmux set-option -gq @opencode_usage_lock_file  "$LOCK_FILE"
 
 # Start the background poller (single-instance guard is inside the script)
-tmux run-shell "\"$POLL_SCRIPT\" \"$CACHE_FILE\" \"$LOCK_FILE\" &"
+tmux run-shell "\"$POLL_SCRIPT\" \"$CACHE_FILE\" \"$LOCK_FILE\" \"$WINDOW\" &"
 
-# Register the interpolation variable that users can drop into any format string:
-#   set -ag status-right "#{@opencode_usage}"
+# Expose #{@opencode_usage} for use in any status format string
 tmux set-option -g @opencode_usage "#($DISPLAY_SCRIPT $CACHE_FILE)"

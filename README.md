@@ -80,12 +80,19 @@ set -ag status-right "#{E:@catppuccin_status_opencode}"
 
 | Option | Default | Description |
 |--------|---------|-------------|
+| `@opencode_usage_window` | `today` | Time window for usage counts: `today` or `24h` |
 | `@opencode_usage_db` | `~/.local/share/opencode/opencode.db` | Path to opencode database |
 
-To override the DB path:
+### `@opencode_usage_window`
+
+Controls the time window over which prompts and tokens are counted:
+
+- **`today`** (default) — counts from 00:00 of the current calendar day. Resets at midnight.
+- **`24h`** — rolling 24-hour window. Always shows the last 24 hours regardless of time of day.
 
 ```tmux
-set -g @opencode_usage_db "/path/to/opencode.db"
+# Use rolling 24-hour window instead of calendar day
+set -g @opencode_usage_window "24h"
 ```
 
 ## License

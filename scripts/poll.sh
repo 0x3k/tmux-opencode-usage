@@ -2,13 +2,17 @@
 # Background poller for tmux-opencode-usage.
 # Queries opencode's SQLite DB and writes a formatted string to a cache file.
 #
-# Usage: poll.sh <cache_file> <lock_file>
+# Usage: poll.sh <cache_file> <lock_file> <window>
+#
+#   window: "today"  - from 00:00 of the current calendar day (default)
+#           "24h"    - rolling 24-hour window
 #
 # Adaptive interval: resets to MIN_INTERVAL on any change, doubles each idle
 # cycle up to MAX_INTERVAL. Uses only sh, sqlite3, and awk — no python3.
 
 CACHE_FILE="${1:-${TMPDIR:-/tmp}/opencode_usage_cache}"
 LOCK_FILE="${2:-${TMPDIR:-/tmp}/opencode_usage_poll.lock}"
+WINDOW="${3:-today}"
 DB="$HOME/.local/share/opencode/opencode.db"
 MIN_INTERVAL=2
 MAX_INTERVAL=60
@@ -31,9 +35,20 @@ fmt_tok() {
     }'
 }
 
+since_ms() {
+    if [ "$WINDOW" = "24h" ]; then
+        # Rolling 24-hour window
+        printf "%s" "$(( ($(date +%s) - 86400) * 1000 ))"
+    else
+        # From 00:00 of the current calendar day
+        midnight=$(date +%Y-%m-%d)
+        printf "%s" "$(( $(date -j -f "%Y-%m-%d %H:%M:%S" "$midnight 00:00:00" +%s 2>/dev/null \
+            || date -d "$midnight 00:00:00" +%s 2>/dev/null) * 1000 ))"
+    fi
+}
+
 query() {
-    # 24 hours ago in milliseconds — pure shell arithmetic, no python3
-    since_ms=$(( ($(date +%s) - 86400) * 1000 ))
+    ms=$(since_ms)
 
     result=$(sqlite3 "$DB" "
 SELECT
@@ -42,19 +57,19 @@ SELECT
    JOIN session s ON m.session_id = s.id
    WHERE json_extract(m.data, '$.role') = 'user'
      AND s.parent_id IS NULL
-     AND CAST(json_extract(m.data, '$.time.created') AS INTEGER) >= ${since_ms}),
+     AND CAST(json_extract(m.data, '$.time.created') AS INTEGER) >= ${ms}),
   COALESCE(SUM(CAST(json_extract(m.data, '$.tokens.input')  AS INTEGER)), 0),
   COALESCE(SUM(CAST(json_extract(m.data, '$.tokens.output') AS INTEGER)), 0)
 FROM message m
 JOIN session s ON m.session_id = s.id
 WHERE json_extract(m.data, '$.role')       = 'assistant'
   AND json_extract(m.data, '$.providerID') = 'anthropic'
-  AND CAST(json_extract(m.data, '$.time.created') AS INTEGER) >= ${since_ms}
+  AND CAST(json_extract(m.data, '$.time.created') AS INTEGER) >= ${ms}
 " 2>/dev/null)
 
     [ -z "$result" ] && return 1
 
-    msgs=$(printf "%s" "$result"     | cut -d'|' -f1)
+    msgs=$(printf "%s" "$result"      | cut -d'|' -f1)
     input_tok=$(printf "%s" "$result" | cut -d'|' -f2)
     output_tok=$(printf "%s" "$result" | cut -d'|' -f3)
     total_tok=$(( input_tok + output_tok ))
