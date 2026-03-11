@@ -29,7 +29,7 @@ opencode stores all session data in a local SQLite database at `~/.local/share/o
 Add to `~/.tmux.conf`:
 
 ```tmux
-set -g @plugin 'your-username/tmux-opencode-usage'
+set -g @plugin '0x3k/tmux-opencode-usage'
 ```
 
 Then press `prefix + I` to install.
@@ -37,7 +37,7 @@ Then press `prefix + I` to install.
 ### Manual
 
 ```sh
-git clone https://github.com/your-username/tmux-opencode-usage ~/.tmux/plugins/tmux-opencode-usage
+git clone https://github.com/0x3k/tmux-opencode-usage ~/.tmux/plugins/tmux-opencode-usage
 ```
 
 Add to `~/.tmux.conf`:
