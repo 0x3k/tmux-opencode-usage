@@ -48,10 +48,10 @@ run '~/.tmux/plugins/tmux-opencode-usage/opencode-usage.tmux'
 
 ## Usage
 
-After installation the plugin exposes `#{@opencode_usage}` which you can place anywhere in your status line:
+After installation the plugin exposes `#{E:@opencode_usage}` which you can place anywhere in your status line. The `E:` flag is required to tell tmux to evaluate the shell command inside the variable.
 
 ```tmux
-set -ag status-right " #{@opencode_usage}"
+set -ag status-right " #{E:@opencode_usage}"
 ```
 
 ### With catppuccin
@@ -64,7 +64,7 @@ If you use the [catppuccin tmux theme](https://github.com/catppuccin/tmux), you 
 
 set -ogq "@catppuccin_${MODULE_NAME}_icon" " "
 set -ogqF "@catppuccin_${MODULE_NAME}_color" "#{E:@thm_mauve}"
-set -ogq "@catppuccin_${MODULE_NAME}_text" " #{@opencode_usage}"
+set -ogq "@catppuccin_${MODULE_NAME}_text" " #{E:@opencode_usage}"
 
 source ~/.tmux/plugins/tmux/utils/status_module.conf
 ```

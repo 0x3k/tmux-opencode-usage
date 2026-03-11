@@ -19,5 +19,6 @@ tmux set-option -gq @opencode_usage_lock_file  "$LOCK_FILE"
 # Start the background poller using -b so tmux doesn't block waiting for it
 tmux run-shell -b "\"$POLL_SCRIPT\" \"$CACHE_FILE\" \"$LOCK_FILE\" \"$WINDOW\""
 
-# Expose #{@opencode_usage} for use in any status format string
-tmux set-option -g @opencode_usage "#($DISPLAY_SCRIPT $CACHE_FILE)"
+# Expose #{E:@opencode_usage} for use in any status format string.
+# The E: flag is required so tmux evaluates the #() inside the variable value.
+tmux set-option -g @opencode_usage "#($DISPLAY_SCRIPT \"$CACHE_FILE\")"
