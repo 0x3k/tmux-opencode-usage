@@ -14,7 +14,7 @@ Prompts sent and tokens consumed — updated in real time, straight from your lo
 
 ---
 
-<img src="tile.png" alt="tmux-opencode-usage preview" width="400"/>
+<p align="center"><img src="tile.png" alt="tmux-opencode-usage preview" width="280"/></p>
 
 > Queries opencode's local SQLite database directly.
 > No API keys. No network requests. No extra dependencies beyond `sqlite3` and `awk`.
