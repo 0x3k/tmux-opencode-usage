@@ -1,30 +1,36 @@
 # tmux-opencode-usage
 
-A tmux plugin that shows your [opencode](https://opencode.ai) AI usage in the status bar — prompts sent and tokens consumed in the last 24 hours.
+A tmux status bar plugin that shows your [opencode](https://opencode.ai) AI usage in real time — prompts sent and tokens consumed, updated live as you work.
 
 ```
- 65msg 508ktok
+ 42msg 318ktok
 ```
 
-Counts update adaptively: every 2 seconds while you are actively using opencode, backing off to 60 seconds when idle.
+Queries opencode's local SQLite database directly. No API keys. No network requests. No dependencies beyond `sqlite3` and `awk`.
+
+---
 
 ## How it works
 
-opencode stores all session data in a local SQLite database at `~/.local/share/opencode/opencode.db`. This plugin queries that database directly — no API keys, no network requests.
+opencode stores all session data in a local SQLite database at `~/.local/share/opencode/opencode.db`. This plugin runs a lightweight background process that queries it on an **adaptive schedule**: every 2 seconds while you are actively using opencode, backing off to 60 seconds when idle.
 
-- **Prompts**: user messages in top-level sessions (sub-agent turns are excluded)
-- **Tokens**: all input + output tokens from Anthropic models in the last 24 hours
-- **Adaptive polling**: a background process samples the DB every 2s on activity, doubling the interval up to 60s when idle, using only `sh`, `sqlite3`, and `awk`
+- **Prompts** — counts your messages in top-level sessions (sub-agent turns are excluded)
+- **Tokens** — total input + output tokens consumed by Anthropic models
+- **Window** — configurable: from midnight today (default) or a rolling 24-hour window
+
+---
 
 ## Requirements
 
 - tmux >= 3.0
-- [opencode](https://opencode.ai) with at least one session using an Anthropic model
-- `sqlite3` (pre-installed on macOS; `apt install sqlite3` on Linux)
+- [opencode](https://opencode.ai) with at least one Anthropic model session
+- `sqlite3` — pre-installed on macOS; `sudo apt install sqlite3` on Linux
+
+---
 
 ## Installation
 
-### With TPM
+### With TPM (recommended)
 
 Add to `~/.tmux.conf`:
 
@@ -32,7 +38,7 @@ Add to `~/.tmux.conf`:
 set -g @plugin '0x3k/tmux-opencode-usage'
 ```
 
-Then press `prefix + I` to install.
+Press `prefix + I` to install.
 
 ### Manual
 
@@ -46,17 +52,21 @@ Add to `~/.tmux.conf`:
 run '~/.tmux/plugins/tmux-opencode-usage/opencode-usage.tmux'
 ```
 
+---
+
 ## Usage
 
-After installation the plugin exposes `#{E:@opencode_usage}` which you can place anywhere in your status line. The `E:` flag is required to tell tmux to evaluate the shell command inside the variable.
+The plugin exposes `#{E:@opencode_usage}` — drop it anywhere in your status line:
 
 ```tmux
 set -ag status-right " #{E:@opencode_usage}"
 ```
 
+> The `E:` flag is required. It tells tmux to evaluate the shell command stored inside the variable.
+
 ### With catppuccin
 
-If you use the [catppuccin tmux theme](https://github.com/catppuccin/tmux), you can integrate it as a styled module. Add a file `~/.tmux/custom/opencode.conf`:
+If you use the [catppuccin tmux theme](https://github.com/catppuccin/tmux), you can render it as a native styled module. Create `~/.tmux/custom/opencode.conf`:
 
 ```tmux
 # vim:set ft=tmux:
@@ -76,24 +86,23 @@ source ~/.tmux/custom/opencode.conf
 set -ag status-right "#{E:@catppuccin_status_opencode}"
 ```
 
+---
+
 ## Configuration
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `@opencode_usage_window` | `today` | Time window for usage counts: `today` or `24h` |
-| `@opencode_usage_db` | `~/.local/share/opencode/opencode.db` | Path to opencode database |
-
-### `@opencode_usage_window`
-
-Controls the time window over which prompts and tokens are counted:
-
-- **`today`** (default) — counts from 00:00 of the current calendar day. Resets at midnight.
-- **`24h`** — rolling 24-hour window. Always shows the last 24 hours regardless of time of day.
+| `@opencode_usage_window` | `today` | `today` — from 00:00; `24h` — rolling 24-hour window |
 
 ```tmux
-# Use rolling 24-hour window instead of calendar day
+# Default: counts from midnight, resets at 00:00
+set -g @opencode_usage_window "today"
+
+# Alternative: always show the last 24 hours
 set -g @opencode_usage_window "24h"
 ```
+
+---
 
 ## License
 
