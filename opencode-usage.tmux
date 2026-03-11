@@ -16,8 +16,8 @@ WINDOW="${WINDOW:-today}"
 tmux set-option -gq @opencode_usage_cache_file "$CACHE_FILE"
 tmux set-option -gq @opencode_usage_lock_file  "$LOCK_FILE"
 
-# Start the background poller (single-instance guard is inside the script)
-tmux run-shell "\"$POLL_SCRIPT\" \"$CACHE_FILE\" \"$LOCK_FILE\" \"$WINDOW\" &"
+# Start the background poller using -b so tmux doesn't block waiting for it
+tmux run-shell -b "\"$POLL_SCRIPT\" \"$CACHE_FILE\" \"$LOCK_FILE\" \"$WINDOW\""
 
 # Expose #{@opencode_usage} for use in any status format string
 tmux set-option -g @opencode_usage "#($DISPLAY_SCRIPT $CACHE_FILE)"
