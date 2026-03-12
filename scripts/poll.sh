@@ -2,12 +2,13 @@
 # Background poller for tmux-opencode-usage.
 # Queries opencode's SQLite DB and writes a formatted string to a cache file.
 #
-# Usage: poll.sh <cache_file> <lock_file> <window> <format>
+# Usage: poll.sh <cache_file> <lock_file> <window>
 #
 #   window: "today"  - from 00:00 of the current calendar day (default)
 #           "24h"    - rolling 24-hour window
-#   format: display format string with placeholders (see README)
-#           default: "{msgs}msg {output}out {total}tot"
+#
+# The display format is read from the tmux option @opencode_usage_format
+# (default: "{msgs}msg {output}out {total}tot"). See README for placeholders.
 #
 # Adaptive interval: resets to MIN_INTERVAL on any change, doubles each idle
 # cycle up to MAX_INTERVAL. Uses only sh, sqlite3, and awk — no python3.
@@ -15,7 +16,6 @@
 CACHE_FILE="${1:-${TMPDIR:-/tmp}/opencode_usage_cache}"
 LOCK_FILE="${2:-${TMPDIR:-/tmp}/opencode_usage_poll.lock}"
 WINDOW="${3:-today}"
-FORMAT="${4:-{msgs}msg {output}out {total}tot}"
 DB="$HOME/.local/share/opencode/opencode.db"
 MIN_INTERVAL=2
 MAX_INTERVAL=60
@@ -83,6 +83,11 @@ WHERE json_extract(m.data, '$.role')       = 'assistant'
     cache_write=$(printf "%s" "$result" | cut -d'|' -f5)
     reasoning=$(printf "%s" "$result"   | cut -d'|' -f6)
     total_tok=$(printf "%s" "$result"   | cut -d'|' -f7)
+
+    FORMAT=$(tmux show-option -gv @opencode_usage_format 2>/dev/null)
+    if [ -z "$FORMAT" ]; then
+        FORMAT='{msgs}msg {output}out {total}tot'
+    fi
 
     out="$FORMAT"
     out=$(printf "%s" "$out" | sed "s/{msgs}/${msgs}/g")
