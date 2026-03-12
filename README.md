@@ -31,7 +31,7 @@ opencode stores all session data in a local SQLite database at `~/.local/share/o
 | Metric | What it counts |
 |--------|----------------|
 | **Prompts** | Your messages in top-level sessions (sub-agent turns excluded) |
-| **Tokens** | Total input + output tokens from Anthropic models |
+| **Tokens** | All token types from Anthropic models (input, output, cache read/write, reasoning) |
 | **Window** | Configurable: from midnight today (default) or rolling 24h |
 
 ---
@@ -113,6 +113,7 @@ set -ag status-right "#{E:@catppuccin_status_opencode}"
 | Option | Default | Description |
 |--------|---------|-------------|
 | `@opencode_usage_window` | `today` | `today` — from 00:00 · `24h` — rolling 24-hour window |
+| `@opencode_usage_format` | `{msgs}msg {output}out {total}tot` | Display format string (see below) |
 
 ```tmux
 # Counts from midnight, resets at 00:00 (default)
@@ -120,6 +121,36 @@ set -g @opencode_usage_window "today"
 
 # Always show the last 24 hours
 set -g @opencode_usage_window "24h"
+```
+
+### Format string
+
+The `@opencode_usage_format` option controls what gets displayed. Use any combination of placeholders and literal text:
+
+| Placeholder | Description |
+|-------------|-------------|
+| `{msgs}` | Number of user prompts (top-level sessions only) |
+| `{input}` | Input tokens |
+| `{output}` | Output tokens |
+| `{cache_read}` | Cache read tokens |
+| `{cache_write}` | Cache write tokens |
+| `{reasoning}` | Reasoning/thinking tokens |
+| `{total}` | Total tokens (all types combined, from the provider) |
+
+Token values are automatically formatted with `k`/`M` suffixes (e.g., `45k`, `1.2M`).
+
+```tmux
+# Default: prompts, output tokens, and total tokens
+set -g @opencode_usage_format "{msgs}msg {output}out {total}tot"
+
+# Simple total only
+set -g @opencode_usage_format "{msgs}msg {total}tok"
+
+# Full breakdown
+set -g @opencode_usage_format "{msgs}msg {input}in {output}out {cache_read}cr {cache_write}cw"
+
+# Minimal: just total tokens
+set -g @opencode_usage_format "{total}tok"
 ```
 
 ---

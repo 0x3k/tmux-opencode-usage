@@ -9,15 +9,18 @@ DISPLAY_SCRIPT="$PLUGIN_DIR/scripts/display.sh"
 CACHE_FILE="${TMPDIR:-/tmp}/opencode_usage_cache"
 LOCK_FILE="${TMPDIR:-/tmp}/opencode_usage_poll.lock"
 
-# Read user option: "today" (default) or "24h"
+# Read user options
 WINDOW=$(tmux show-option -gv @opencode_usage_window 2>/dev/null)
 WINDOW="${WINDOW:-today}"
+
+FORMAT=$(tmux show-option -gv @opencode_usage_format 2>/dev/null)
+FORMAT="${FORMAT:-{msgs}msg {output}out {total}tot}"
 
 tmux set-option -gq @opencode_usage_cache_file "$CACHE_FILE"
 tmux set-option -gq @opencode_usage_lock_file  "$LOCK_FILE"
 
 # Start the background poller using -b so tmux doesn't block waiting for it
-tmux run-shell -b "\"$POLL_SCRIPT\" \"$CACHE_FILE\" \"$LOCK_FILE\" \"$WINDOW\""
+tmux run-shell -b "\"$POLL_SCRIPT\" \"$CACHE_FILE\" \"$LOCK_FILE\" \"$WINDOW\" \"$FORMAT\""
 
 # Expose #{E:@opencode_usage} for use in any status format string.
 # The E: flag is required so tmux evaluates the #() inside the variable value.
